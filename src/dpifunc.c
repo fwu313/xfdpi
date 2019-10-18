@@ -24,7 +24,7 @@
 #include <pcap.h>
 
 #include "dpdkframework.h"
-#include "distributor.h"
+#include "xfdpi.h"
 
 static struct ndpi_detection_module_struct *g_ndpi_module = NULL;
 

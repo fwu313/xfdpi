@@ -22,7 +22,7 @@
 
 #include "dpdkframework.h"
 #include "dpdkframework_ipc.h"
-#include "distributor.h"
+#include "xfdpi.h"
 
 int get_pkt_core_and_intf(struct rte_mbuf *m, int *coreid)
 {

@@ -12,7 +12,7 @@
 #include "dpdkframework_ipc.h"
 #include "dpdkframework_stats.h"
 
-#include "distributor.h"
+#include "xfdpi.h"
 
 #define ADD_JSON(k,v) do { \
     snprintf(buff, sizeof(buff), "%lu", v); \
