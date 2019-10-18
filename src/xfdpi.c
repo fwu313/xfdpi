@@ -58,7 +58,7 @@ int get_pkt_core_and_intf(struct rte_mbuf *m, int *coreid)
     return 0;
 }
 
-void eth_rx_standalone(struct rte_mbuf *m)
+static void eth_rx_standalone(struct rte_mbuf *m)
 {
     int core_id;
 
@@ -75,6 +75,26 @@ void eth_rx_standalone(struct rte_mbuf *m)
             rte_pktmbuf_free(m);
         }
     }
+}
+
+static void eth_rx_dispatch(struct rte_mbuf *m)
+{
+    int core_id;
+
+    if(unlikely(get_pkt_core_and_intf(m, &core_id) < 0)){
+        gp_distributor_stat->ignored_pkt_cnt++;
+        rte_pktmbuf_free(m);
+        return;
+    }
+
+    if(dkfw_send_pkt_to_dispatchQ(m, core_id) < 0){
+        rte_pktmbuf_free(m);
+    }
+}
+
+static void process_packet_one_real(struct rte_mbuf *m)
+{
+    dpdk_process_packet_one_real(m);
 }
 
 static void ms_timer_do_distributor(uint32_t *ms_cnt_0, uint32_t *ms_cnt_1, uint32_t ms_diff)
@@ -119,13 +139,13 @@ int main(int argc, char **argv)
     loop_arg.process_ipc_msg = process_ipc_msg;
     if(DISPATCH_CORES_NUM){
         if(IS_APP_CORE){
-            // loop_arg.loop_dispatch_rx = dispatch_q_rx_apponly_distributor;
+            loop_arg.loop_dispatch_rx = process_packet_one_real;
         }else{
-            // loop_arg.loop_eth_rx = eth_rx_dispatch_core_distributor;
+            loop_arg.loop_eth_rx = eth_rx_dispatch;
         }
     }else{
         loop_arg.loop_eth_rx = eth_rx_standalone;
-        // loop_arg.loop_dispatch_rx = dispatch_q_rx_stdalone_distributor;
+        loop_arg.loop_dispatch_rx = process_packet_one_real;
     }
 
     dkfw_start_loop(&loop_arg);
